@@ -1,6 +1,6 @@
 """
 def generate_all(elements, N, K):
-    if K == 0 or N == 0 or N < K:
+    if K == 0 or N == 0 or N < K: # Kombinacje K == 0: [[]], inne []
         return [[]]
     elements = elements[:N]
     result = []
