@@ -1,80 +1,147 @@
 """
-def generate_all(elements, N, K):
-    if K == 0 or N == 0 or N < K: # Kombinacje K == 0: [[]], inne []
-        return [[]]
+def all(elements, N):
+    if K == 0 or N == 0: # combinations: N < K, N == 0: []
+	return [[]]
     elements = elements[:N]
-    result = []
+    generated = []
     for i in range(N):
-        # Permutacje
-        rest = elements[:i] + elements[i + 1:]
-        for p in generate_permutations(rest, len(rest)):
-            result.append([elements[i]] + p)
-        # Kombinacje
-        rest = elements[i + 1:]
-        for c in generate_combinations(rest, len(rest), K - 1):
-            result.append([elements[i]] + c)
-        # Multizbiory
-        for m in generate_multisets(elements[i:], len(elements[i:]), K - 1):
-            result.append([elements[i]] + m)
-    return result
-    
-i = 1
-for a in enumerate(generate_all(cities, N, K):
-    print(f"{i}: {[city['name'] for city in a]}")
-    i += 1
+	# permutations
+        rest = elements[:i] + elements[i+1:]
+        for a in permutations(rest, len(rest)):
+	# combinations
+	rest = elements[i+1:]
+        for a in combinations(rest, len(rest), K-1):
+	# multisets
+	rest = elements[i:]
+        for a in multisets(rest, len(rest), K-1):
+            generated.append([elements[i]] + a)
+    return generated
 """
 
-"""
+import math
+
 def load_cities(filename):
     cities = []
     with open(filename, "r", encoding="utf-8") as file:
-        lines = file.readlines()[1:]  # Czyta wszystkie linie z pliku, pomijając pierwszą (nagłówek)
-        for line in lines:  # Iteruje przez każdą linię w pliku
-            parts = line.split()  # Dzieli linię na części (oddzielone białymi znakami)
-            city = {  # Tworzy słownik z informacjami o mieście
+        lines = file.readlines()[1:]
+        for line in lines:
+            parts = line.split()
+            city = {
                 "id": int(parts[0]),  #
                 "name": parts[1],
                 "population": int(parts[2]),
-                "lat": float(parts[3]),
-                "lon": float(parts[4])
+                "latitude": float(parts[3]),
+                "longitude": float(parts[4])
             }
             cities.append(city)
     return cities
-"""
 
-"""
-def shortest_tsp_route(cities, N):
+def permutations(elements, N):
+    if N == 0:
+        return [[]]
+    elements = elements[:N]
+    generated = []
+    for i in range(N):
+        rest = elements[:i] + elements[i+1:]
+        for p in permutations(rest, len(rest)):
+            generated.append([elements[i]] + p)
+    return generated
+
+def combinations(elements, N, K):
+    if K == 0:
+        return [[]]
+    if N < K or N == 0:
+        return []
+    elements = elements[:N]
+    generated = []
+    for i in range(N):
+        rest = elements[i+1:]
+        for c in combinations(rest, len(rest), K-1):
+            generated.append([elements[i]] + c)
+    return generated
+
+def multisets(elements, N, K):
+    if K == 0 or N == 0:
+        return [[]]
+    elements = elements[:N]
+    generated = []
+    for i in range(N):
+        rest = elements[i:]
+        for m in multisets(rest, len(rest), K-1):
+            generated.append([elements[i]] + m)
+    return generated
+
+def radians(deg):
+    return deg * math.pi / 180
+
+def haversine(latitude1, longitude1, latitude2, longitude2):
+    phi1, phi2 = radians(latitude1), radians(latitude2)
+    diff_phi = radians(latitude2 - latitude1)
+    diff_lambda = radians(longitude2 - longitude1)
+    alfa = (math.sin(diff_phi/2))**2 + math.cos(phi1) * math.cos(phi2) * (math.sin(diff_lambda/2))**2
+    return 2 * 6371 * math.asin(math.sqrt(alfa))
+
+def shortest_route(cities, N):
     cities = cities[:N]
-    best_route, min_distance = None, float('inf')  # Inicjalizuje zmienne do przechowywania najlepszej trasy i minimalnej odległości
-    for perm in generate_permutations(cities, N):  # Iteruje przez wszystkie permutacje miast
-        distance = 0  # Inicjalizuje zmienną do przechowywania całkowitej odległości trasy
-        for i in range(len(perm) - 1):  # Iteruje przez miasta w permutacji
-            distance += haversine(perm[i]['lat'], perm[i]['lon'], perm[i+1]['lat'], perm[i+1]['lon'])  # Dodaje odległość między kolejnymi miastami
-        distance += haversine(perm[-1]['lat'], perm[-1]['lon'], perm[0]['lat'], perm[0]['lon'])  # Dodaje odległość powrotu do pierwszego miasta
-        if distance < min_distance:  # Sprawdza, czy bieżąca trasa jest krótsza od dotychczasowej najlepszej
-            min_distance = distance  # Aktualizuje minimalną odległość
-            best_route = perm  # Aktualizuje najlepszą trasę
+    best_route, min_distance = None, float('inf')
+    for p in permutations(cities, N):
+        distance = 0
+        for i in range(len(p) - 1):
+            distance += haversine(p[i]['latitude'], p[i]['longitude'], p[i+1]['latitude'], p[i+1]['longitude'])
+        distance += haversine(p[-1]['latitude'], p[-1]['longitude'], p[0]['latitude'], p[0]['longitude'])
+        if distance < min_distance:
+            min_distance = distance
+            best_route = p
     return best_route, min_distance
-    
-best_route, min_distance = shortest_tsp_route(cities, N)  # Znajduje najkrótszą trasę TSP dla N miast
-print("Najkrótsza trasa:", [city["name"] for city in best_route])  # Wyświetla nazwy miast w najkrótszej trasie
-print("Długość trasy:", min_distance, "km")  # Wyświetla długość najkrótszej trasy
-"""
 
-"""
-def closest_population_subset(cities, N):
-    cities = cities[:N]  # Ogranicza listę miast do pierwszych N miast
-    total_population = sum(city['population'] for city in cities)  # Oblicza całkowitą populację N miast
-    target = total_population / 2  # Oblicza docelową populację (50% całkowitej populacji)
-    best_subset, best_diff = None, float('inf')  # Inicjalizuje zmienne do przechowywania najlepszego podzbioru i najmniejszej różnicy
-    for r in range(1, len(cities) + 1):  # Iteruje przez możliwe rozmiary podzbiorów
-        for subset in generate_combinations(cities, N, r):  # Iteruje przez wszystkie kombinacje miast o danym rozmiarze
-            subset_population = sum(city['population'] for city in subset)  # Oblicza populację bieżącego podzbioru
-            diff = abs(subset_population - target)  # Oblicza różnicę między populacją podzbioru a docelową populacją
-            if diff < best_diff:  # Sprawdza, czy bieżąca różnica jest mniejsza od dotychczasowej najlepszej
-                best_diff, best_subset = diff, subset  # Aktualizuje najlepszą różnicę i podzbiór
-    return best_subset
-    
-best_subset = closest_population_subset(italy_cities, N)  # Znajduje podzbiór miast z populacją najbliższą 50%
-print("Najlepszy podzbiór:", [city["name"] for city in best_subset])  # Wyświetla nazwy miast w najlepszym podzbiorze
-"""
+def closest_population_comb(cities, N):
+    cities = cities[:N]
+    total_population = sum(city['population'] for city in cities)
+    target = total_population / 2
+    best_c, best_diff = None, float('inf')
+    for r in range(1, len(cities) + 1):
+        for c in combinations(cities, N, r):
+            c_population = sum(city['population'] for city in c)
+            diff = abs(c_population - target)
+            if diff < best_diff:
+                best_diff, best_c = diff, c
+    return best_c
+
+cities = load_cities("France.txt")
+N, M = 3, 2
+
+i = 1
+# 1) Dla podanej liczby N wypisać ponumerowane wszystkie porządki odwiedzin N miast 1,2,...,N
+for p in permutations(cities, N):
+    city_names = [city['name'] for city in p]
+    print(i, city_names)
+    i += 1
+print("")
+
+# Dla podanych liczb N i M wypisać ponumerowane wszystkie porządki odwiedzin M z N miast 1,2,...,N
+# Dla podanych liczb N i K <= N wypisać ponumerowane wszystkie podzbiory K z N miast 1,2,...,N
+i = 1
+for c in combinations(cities, N, M):
+    city_names = [city['name'] for city in c]
+    print(i, city_names)
+    i += 1
+print("")
+
+# Dla podanych liczb N i M wypisać ponumerowane wszystkie podzbiory, z możliwymi powtórzeniami, M z N miast 1,2,...,N
+i = 1
+for m in multisets(cities, N, M):
+    city_names = [city['name'] for city in m]
+    print(i, city_names)
+    i += 1
+print("")
+
+# Korzystając z informacji o współrzędnych x i y miast, podać przebieg i długość najkrótszej trasy-cyklu odwiedzin miast.
+route, distance = shortest_route(cities, N)
+print("Najkrótsza trasa:", [city["name"] for city in route])
+print("Długość trasy:", distance, "km")
+print("")
+
+# Korzystając z informacji o liczbie ludności miast, podać podzbiór, dla którego sumaryczna liczba mieszkańców jest najbliższa 50% liczby mieszkańców (bez powtórzeń) N miast.
+best_comb = closest_population_comb(cities, N)
+print("Najlepszy podzbiór:", [city["name"] for city in best_comb])
+
